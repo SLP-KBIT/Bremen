@@ -1,4 +1,4 @@
-#!/usr/bin/ruby
+#!/usr/local/bin/ruby
 
 require 'rubygems'
 gem 'google-api-client', '>0.7'
@@ -7,9 +7,6 @@ require 'google/api_client/client_secrets'
 require 'google/api_client/auth/file_storage'
 require 'google/api_client/auth/installed_app'
 require 'trollop'
-
-require './oauth_util.rb'
-require 'pry'
 
 # This OAuth 2.0 access scope allows for full read/write access to the
 # authenticated user's account.
@@ -42,29 +39,28 @@ def get_authenticated_service
   return client, youtube
 end
 
-def main
+def main(video_id)
   client, youtube = get_authenticated_service
 
-  binding.pry
   begin
     body = {
       :snippet => {
         :playlistId => 'PLK1195uQQBV0I2PgMKFn8CxdtHTcrP_cC',
         :resourceId => {
-          :videoId => 'v40Uyv3sRcI',
+          :videoId => video_id,
           :kind => 'youtube#video'
         }
       }
     }
 
     # Call the youtube.activities.insert method to post the channel bulletin.
-    # client.execute!(
-    #   :api_method => youtube.playlist_items.insert,
-    #   :parameters => {
-    #     :part => body.keys.join(',')
-    #   },
-    #   :body_object => body
-    # )
+    client.execute!(
+      :api_method => youtube.playlist_items.insert,
+      :parameters => {
+        :part => body.keys.join(',')
+      },
+      :body_object => body
+    )
 
     puts "The bulletin was posted to your channel."
   rescue Google::APIClient::TransmissionError => e
@@ -72,7 +68,11 @@ def main
   end
 end
 
-# oauth = CommandLineOAuthHelper.new(YOUTUBE_SCOPE)
-# oauth.authorize
-main
+begin
+  video_id = ARGV.first
+  main(video_id)
+rescue => ex
+  File.open('error_log', 'a') {|f| f.puts ex}
+end
+
 
